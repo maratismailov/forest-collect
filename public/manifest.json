@@ -1,0 +1,22 @@
+{
+  "name": "Forest collect",
+  "short_name": "Forest collect",
+  "theme_color": "#1e1e1e",
+  "background_color": "#1e1e1e",
+  "display": "standalone",
+  "Scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/assets/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "splash_pages": null
+}
