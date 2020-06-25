@@ -15,9 +15,14 @@
   let allplaces;
   let selected_oblast;
   let selected_leshoz;
+  let selected_forestry;
+  let selected_block;
+  let selected_stand;
   let fullleshozlist = [];
   let leshozlist = [];
   let forestrieslist = [];
+  let blocklist = [];
+  let standlist = [];
   let db;
   let standsdata = [];
   let currentstand;
@@ -176,7 +181,14 @@
   };
 
   const select_oblast = e => {
-    forestrieslist = []
+    leshozlist = "";
+    forestrieslist = [];
+    blocklist = [];
+    standlist = [];
+    selected_leshoz = "all";
+    selected_forestry = "all";
+    selected_block = "all";
+    selected_stand = "all";
     selected_oblast = e.target.value;
     if (e.target.value === "all") {
       leshozlist = fullleshozlist;
@@ -194,16 +206,55 @@
   };
 
   const select_leshoz = e => {
-    selected_leshoz = e.target.value;
     forestrieslist = [];
+    blocklist = [];
+    standlist = [];
+    selected_forestry = "all";
+    selected_block = "all";
+    selected_stand = "all";
+    selected_leshoz = e.target.value;
     leshozlist.map(leshoz => {
-      if(leshoz.leshoz_id === e.target.value){
+      if (leshoz.leshoz_id === e.target.value) {
         leshoz.forestries_list.map(forestry => {
-          forestrieslist.push(forestry)
-        })
+          forestrieslist.push(forestry);
+        });
       }
-    })
+    });
     forestrieslist = forestrieslist;
+  };
+
+  const select_forestry = e => {
+    selected_forestry = e.target.value;
+    blocklist = [];
+    standlist = [];
+    selected_block = "all";
+    selected_stand = "all";
+    forestrieslist.map(forestry => {
+      if (forestry.gid === e.target.value) {
+        forestry.block_list.map(block => {
+          blocklist.push(block);
+        });
+      }
+    });
+    blocklist = blocklist;
+  };
+
+  const select_block = e => {
+    selected_block = e.target.value;
+    standlist = [];
+    selected_stand = "all";
+    blocklist.map(block => {
+      if (block.gid === e.target.value) {
+        block.stand_list.map(stand => {
+          standlist.push(stand);
+        });
+      }
+    });
+    standlist = standlist;
+  };
+
+  const select_stand = e => {
+    console.log(e.target.value);
   };
 
   const getGeometry = id => {
@@ -359,7 +410,8 @@
 <div class="row">
   <div>Лесхоз</div>
   {#if leshozlist != undefined}
-    <select on:change={select_leshoz}>
+    <select bind:value={selected_leshoz} on:change={select_leshoz}>
+      <option value="all">Лесхоз</option>
       {#each leshozlist as leshoz}
         <option value={leshoz.leshoz_id}>{leshoz.leshoz_ru}</option>
       {/each}
@@ -371,9 +423,36 @@
 <div class="row">
   <div>Лесничество</div>
   {#if forestrieslist != undefined}
-    <select on:change={handle_select}>
+    <select bind:value={selected_forestry} on:change={select_forestry}>
+      <option value="all">Лесничество</option>
       {#each forestrieslist as forestry}
         <option value={forestry.gid}>{forestry.forestry_ru}</option>
+      {/each}
+    </select>
+  {/if}
+  <hr />
+</div>
+
+<div class="row">
+  <div>Квартал</div>
+  {#if blocklist != undefined}
+    <select bind:value={selected_block} on:change={select_block}>
+      <option value="all">Квартал</option>
+      {#each blocklist as block}
+        <option value={block.gid}>{block.block_num}</option>
+      {/each}
+    </select>
+  {/if}
+  <hr />
+</div>
+
+<div class="row">
+  <div>Выдел</div>
+  {#if standlist != undefined}
+    <select bind:value={selected_stand} on:change={select_stand}>
+      <option value="all">Выдел</option>
+      {#each standlist as stand}
+        <option value={stand.gid}>{stand.stand_num}</option>
       {/each}
     </select>
   {/if}
