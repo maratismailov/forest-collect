@@ -116,14 +116,33 @@
                             forestry_ru
                             forestry_num
                             gid
-                            block_list {
-                              block_num
-                              gid
-                              stand_list {
-                                stand_num
-                                gid
-                              }
-                            }
+                          }
+                        }
+                      }
+                    }
+                  }`;
+    // const url = "https://graphql.forest.caiag.kg/?query="
+    const url = "http://localhost:8080/?query=";
+    axios.get(url + allplaces_query).then(response => {
+      allplaces = JSON.parse(response.data).data.allplaces
+      console.log(allplaces.oblasts);
+    });
+  };
+
+  const getForestry = () => {
+    console.log("getiing");
+    const allplaces_query = `{
+                    allplaces {
+                      oblasts {
+                        oblast_id
+                        oblast_ru
+                        leshoz_list {
+                          leshoz_id
+                          leshoz_ru
+                          forestries_list {
+                            forestry_ru
+                            forestry_num
+                            gid
                           }
                         }
                       }
