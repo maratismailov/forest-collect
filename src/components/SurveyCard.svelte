@@ -36,6 +36,8 @@
   let bing;
   const api_key =
     "AijiWK2E56tAWqQiXj0TpzHR4V0xb0wDyCUzeUIqjbuPuwoFPP2kiWNi6TUVMpBn";
+  // const url = "https://graphql.forest.caiag.kg/?query="
+  const url = "http://localhost:8080/?query=";
 
   onMount(() => {
     //check for support
@@ -57,6 +59,11 @@
       db = e.target.result;
       if (!db.objectStoreNames.contains("allplaces")) {
         var allplaces = db.createObjectStore("allplaces", {
+          autoIncrement: true
+        });
+      }
+      if (!db.objectStoreNames.contains("forestry")) {
+        var allplaces = db.createObjectStore("forestry", {
           autoIncrement: true
         });
       }
@@ -83,6 +90,7 @@
       request.onsuccess = function(e) {
         allplaces = e.target.result;
         if (allplaces != undefined) {
+          // console.log('all', allplaces)
           make_fullleshozlist();
         }
         console.log("allplaces from idb", allplaces);
@@ -124,8 +132,9 @@
     // const url = "https://graphql.forest.caiag.kg/?query="
     const url = "http://localhost:8080/?query=";
     axios.get(url + allplaces_query).then(response => {
-      allplaces = JSON.parse(response.data).data.allplaces
-      console.log(allplaces.oblasts);
+      allplaces = JSON.parse(response.data).data.allplaces.oblasts;
+      console.log(allplaces);
+      save_allplaces(allplaces);
     });
   };
 
@@ -148,8 +157,7 @@
                       }
                     }
                   }`;
-    // const url = "https://graphql.forest.caiag.kg/?query="
-    const url = "http://localhost:8080/?query=";
+
     axios.get(url + allplaces_query).then(response => {
       allplaces = JSON.parse(response.data);
       console.log(allplaces);
@@ -158,6 +166,7 @@
   };
 
   const save_allplaces = allplacestodb => {
+    console.log("save");
     //check for support
     if (!("indexedDB" in window)) {
       console.log("This browser doesn't support IndexedDB");
@@ -189,8 +198,78 @@
     make_fullleshozlist();
   };
 
+  const save_forestry = forestrytodb => {
+    // blocklist.forEach(block => {
+    //   console.log(block.geom)
+    //   block.stand_list.map(stand => {
+    //     console.log(stand.geom)
+    //   })
+    // })
+
+    // const handle_select = () => {
+    //   id = selected.id;
+    //   console.log(selected);
+    //   area = L.geoJSON(selected.area).addTo(map);
+    //   multi_json = area.toGeoJSON();
+    //   area_id = area._leaflet_id;
+    //   console.log(area_id);
+    //   // let multi = area.addTo(map);
+    //   // map.setView([42.87, 74.594], 5)
+    //   map.fitBounds(area.getBounds());
+    //   area.getLayers().forEach(l => {
+    //     l.enableEdit();
+    //   });
+    // };
+    forestrytodb.forEach(block => {
+      block.stand_list.forEach(stand => {
+        // console.log(stand.gid);
+        area = null
+          area = L.geoJSON(JSON.parse(stand.geom)).addTo(map);
+          save_tiles(area)
+          // console.log(area.getBounds());
+      });
+    });
+    console.log("save forestry");
+    //check for support
+    if (!("indexedDB" in window)) {
+      console.log("This browser doesn't support IndexedDB");
+      return;
+    }
+    var db_surveycard = indexedDB.open("db_surveycard", 1);
+
+    db_surveycard.onsuccess = function(e) {
+      db = e.target.result;
+      putResult(forestrytodb);
+    };
+    db_surveycard.onerror = function(e) {
+      console.log("onerror!");
+      console.dir(e);
+    };
+
+    function putResult(forestrytodb) {
+      var transaction = db.transaction(["forestry"], "readwrite");
+      var store = transaction.objectStore("forestry");
+
+      var request = store.put(forestrytodb, 1);
+
+      request.onerror = function(e) {
+        console.log("Error", e.target.error.name);
+      };
+      request.onsuccess = function(e) {};
+    }
+    // allplaces = allplacestodb;
+    // make_fullleshozlist();
+  };
+
+  const save_tiles = async area => {
+    map.fitBounds(area.getBounds());
+    map.on("moveend", function(e) {
+      console.log("test");
+    });
+  };
+
   const make_fullleshozlist = () => {
-    allplaces.oblasts.map(oblast => {
+    allplaces.map(oblast => {
       oblast.leshoz_list.map(leshoz => {
         fullleshozlist.push(leshoz);
       });
@@ -213,7 +292,7 @@
       leshozlist = fullleshozlist;
     } else {
       leshozlist = [];
-      allplaces.oblasts.map(oblast => {
+      allplaces.map(oblast => {
         if (oblast.oblast_id == e.target.value) {
           oblast.leshoz_list.map(leshoz => {
             leshozlist.push(leshoz);
@@ -244,18 +323,48 @@
 
   const select_forestry = e => {
     selected_forestry = e.target.value;
-    blocklist = [];
     standlist = [];
     selected_block = "all";
     selected_stand = "all";
-    forestrieslist.map(forestry => {
-      if (forestry.gid === e.target.value) {
-        forestry.block_list.map(block => {
-          blocklist.push(block);
-        });
+    const select_forestry_query =
+      `{
+        forestry (id: ` +
+      selected_forestry +
+      `){
+          blocks {
+          gid
+          block_num
+          geom
+          forestry_id
+          stand_list {
+            gid
+            leshoz_num
+            geom
+            forestry_num
+            stand_num
+          }
+        }
       }
+    }
+    `;
+    axios.get(url + select_forestry_query).then(response => {
+      blocklist = JSON.parse(response.data).data.forestry.blocks;
+      // blocklist.forEach(block => {
+      //   console.log(block.geom)
+      //   block.stand_list.map(stand => {
+      //     console.log(stand.geom)
+      //   })
+      // })
+      // save_allplaces(allplaces.data.allplaces);
     });
-    blocklist = blocklist;
+    // forestrieslist.map(forestry => {
+    //   if (forestry.gid === e.target.value) {
+    //     forestry.block_list.map(block => {
+    //       blocklist.push(block);
+    //     });
+    //   }
+    // });
+    // blocklist = blocklist;
   };
 
   const select_block = e => {
@@ -416,8 +525,8 @@
   {#if allplaces != undefined}
     <select on:change={select_oblast}>
       <option value="all">Область</option>
-      {#if allplaces.oblasts != undefined}
-        {#each allplaces.oblasts as oblast}
+      {#if allplaces != undefined}
+        {#each allplaces as oblast}
           <option value={oblast.oblast_id}>{oblast.oblast_ru}</option>
         {/each}
       {/if}
@@ -449,6 +558,12 @@
       {/each}
     </select>
   {/if}
+  <input
+    type="image"
+    alt="location"
+    src="assets/download.svg"
+    style="max-height: 3vh"
+    on:click={() => save_forestry(blocklist)} />
   <hr />
 </div>
 
@@ -489,9 +604,9 @@
 <button class="action" on:click={show_url}>Show url</button>
 <button class="action" on:click={add_to_cache}>Add to cache</button> -->
 
-{#if area != ''}
+<!-- {#if area != ''}
   {#each area._layers[area_id - 1]._latlngs[0][0] as coordinate, index}
     <p>{index}</p>
     <p>{coordinate}</p>
   {/each}
-{/if}
+{/if} -->
